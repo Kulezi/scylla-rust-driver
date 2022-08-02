@@ -958,6 +958,8 @@ impl Connection {
         while let Some(mut task) = task_receiver.recv().await {
             let mut num_requests = 0;
             let mut total_sent = 0;
+
+
             while let Some(stream_id) = Self::alloc_stream_id(handler_map, task.response_handler) {
                 let mut req = task.serialized_request;
                 req.set_stream(stream_id);
@@ -970,8 +972,25 @@ impl Connection {
                     Err(_) => break,
                 }
             }
+
             trace!("Sending {} requests; {} bytes", num_requests, total_sent);
             write_half.flush().await?;
+
+            // let t = match task_receiver.try_recv() {
+            //     Ok(task) => {
+            //         let stream_id = Self::alloc_stream_id(handler_map, task.response_handler).unwrap();
+            //         let mut req = task.serialized_request;
+            //         req.set_stream(stream_id);
+            //         let req_data: &[u8] = req.get_data();
+            //         total_sent += req_data.len();
+            //         num_requests += 1;
+            //         write_half.write_all(req_data).await?;
+            //     }
+            //     Err(_) => {
+            //         tokio::time::sleep(tokio::time::Duration::from_millis(1)).await;
+            //     }
+            // };
+            tokio::time::sleep(tokio::time::Duration::from_micros(200)).await;
         }
 
         Ok(())
